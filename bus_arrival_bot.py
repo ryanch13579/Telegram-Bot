@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 from dotenv import load_dotenv
-from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import BotCommand, Update
 from telegram.error import BadRequest
 from telegram.ext import Application, ApplicationBuilder, CommandHandler, ContextTypes
 
