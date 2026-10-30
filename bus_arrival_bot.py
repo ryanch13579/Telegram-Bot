@@ -111,10 +111,10 @@ class BusHours:
         return found
 
     def status_text(self, stop: str, service: str) -> str:
-        """Shown when LTA has no arrivals: 'not in operation' outside first/last bus, else 'No Est.'"""
+        """Shown when LTA has no arrivals: 'not in operation' outside first/last bus, else 'No Estimate'"""
         row = self.rows.get((stop, service))
         if not row:
-            return "No Est. Available"
+            return "No Estimate Available"
 
         now = datetime.now(SGT)
         t = now.strftime("%H%M")
@@ -124,7 +124,7 @@ class BusHours:
         if first.isdigit() and last.isdigit():
             running = (first <= t <= last) if first <= last else (t >= first or t <= last)
             if running:
-                return "No Est. Available"
+                return "No Estimate Available"
 
         # Not running: next first bus is later today, or else tomorrow
         if not (first.isdigit() and t < first):

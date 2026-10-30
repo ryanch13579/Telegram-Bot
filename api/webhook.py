@@ -59,7 +59,7 @@ def status_text(item: dict) -> str:
     """Shown when LTA has no arrivals."""
     row = item.get("hours")
     if not row:
-        return "No Est. Available"
+        return "No Estimate Available"
     now = datetime.now(SGT)
     t = now.strftime("%H%M")
     prefix = DAY_PREFIX[now.weekday()]
@@ -67,7 +67,7 @@ def status_text(item: dict) -> str:
     if first.isdigit() and last.isdigit():
         running = (first <= t <= last) if first <= last else (t >= first or t <= last)
         if running:
-            return "No Est. Available"
+            return "No Estimate Available"
     if not (first.isdigit() and t < first):
         first = row.get(f"{DAY_PREFIX[(now.weekday() + 1) % 7]}_FirstBus", "")
     if first.isdigit():
