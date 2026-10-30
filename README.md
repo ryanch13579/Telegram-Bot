@@ -8,7 +8,7 @@ A Telegram bot that shows live bus arrival times for your chosen stops using the
 - `/menu` lists what each command does
 - Crowding shown as 🟢 seats, 🟡 standing, 🔴 limited
 - 🕒 marks times taken from the timetable instead of live GPS
-- Outside operating hours it shows "😴 Not in operation, first bus HH:MM"
+- Outside operating hours it shows "Not in operation, first bus HH:MM"
 - Always uses Singapore time (UTC+8), even on an overseas server
 - Your stops are kept in an environment variable, not in the code
 

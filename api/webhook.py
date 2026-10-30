@@ -71,8 +71,8 @@ def status_text(item: dict) -> str:
     if not (first.isdigit() and t < first):
         first = row.get(f"{DAY_PREFIX[(now.weekday() + 1) % 7]}_FirstBus", "")
     if first.isdigit():
-        return f"😴 Not in operation, first bus {first[:2]}:{first[2:]}"
-    return "😴 Not in operation"
+        return f"Not in operation, first bus {first[:2]}:{first[2:]}"
+    return "Not in operation"
 
 
 def stop_line(client: httpx.Client, item: dict) -> str:
