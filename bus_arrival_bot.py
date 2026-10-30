@@ -39,7 +39,7 @@ WATCHLIST = json.loads(os.environ.get("WATCHLIST") or "[]")
 
 LOAD_ICON = {"SEA": "🟢", "SDA": "🟡", "LSD": "🔴"}  # seats / standing / limited
 LEGEND = "🟢 seats  🟡 standing  🔴 limited  🕒 scheduled"
-MENU_TEXT = "🚌 *Bus Arrival Bot*\n\n/arrival - next buses at your stops\n/menu - show this menu"
+MENU_TEXT = "🚌 *Bus Arrival Bot*\n\n/menu - Show command shortcuts\n/arrival - Next buses arriving at your stops\n/clear - Delete recent messages\n"
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(message)s")
