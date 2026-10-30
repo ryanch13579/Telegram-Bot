@@ -37,7 +37,7 @@ WATCHLIST = json.loads(os.environ.get("WATCHLIST") or "[]")
 
 LOAD_ICON = {"SEA": "🟢", "SDA": "🟡", "LSD": "🔴"}
 LEGEND = "🟢 seats  🟡 standing  🔴 limited  🕒 scheduled"
-MENU_TEXT = "🚌 *Bus Arrival Bot*\n\n/menu - Show shortcuts\n/arrival - Next buses arriving at your stops\n/clear - Delete recent messages\n"
+MENU_TEXT = "🚌 *Bus Arrival Bot*\n\n/menu - Show command shortcuts\n/arrival - Next buses arriving at your stops\n/clear - Delete recent messages\n"
 
 # ---------- Arrival times ----------
 
