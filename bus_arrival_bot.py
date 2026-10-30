@@ -2,7 +2,7 @@
 Telegram bot: bus arrivals for two fixed stops in Ang Mo Kio,
 using the LTA DataMall Bus Arrival API (v3).
 
-Commands: /menu, /arrival
+Commands: /menu, /arrival, /clear
 """
 
 import asyncio
@@ -111,7 +111,7 @@ class BusHours:
         return found
 
     def status_text(self, stop: str, service: str) -> str:
-        """Shown when LTA has no arrivals: 'not in operation' outside first/last bus, else 'No Estimate'"""
+        """Shown when LTA has no arrivals: 'not in operation' outside first/last bus, else 'No Est.'"""
         row = self.rows.get((stop, service))
         if not row:
             return "No Estimate Available"
@@ -124,7 +124,7 @@ class BusHours:
         if first.isdigit() and last.isdigit():
             running = (first <= t <= last) if first <= last else (t >= first or t <= last)
             if running:
-                return "No Estimate Available"
+                return "No Est. Available"
 
         # Not running: next first bus is later today, or else tomorrow
         if not (first.isdigit() and t < first):
@@ -169,14 +169,27 @@ async def arrival(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(MENU_TEXT, parse_mode="Markdown")
 
+async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Deletes the last 300 messages, yours and the bot's. Telegram skips ones over 48h old."""
+    last_id = update.message.message_id
+    for end in range(last_id, max(last_id - 300, 0), -100):  # delete_messages takes up to 100 at a time
+        try:
+            await context.bot.delete_messages(update.effective_chat.id, list(range(max(end - 99, 1), end + 1)))
+        except BadRequest as e:
+            log.info("Couldn't delete some messages: %s", e)
+
 # ---------- Startup / shutdown ----------
 
 async def on_startup(app: Application):
     """One shared HTTP client for the bot's lifetime, pre-load bus hours, and fill Telegram's command list."""
     app.bot_data["http"] = httpx.AsyncClient(headers=LTA_HEADERS, timeout=10)
     await hours.ensure_loaded(app.bot_data["http"])
-    await app.bot.set_my_commands([BotCommand("arrival", "Show bus arrival times"),
-                                   BotCommand("menu", "Show what each command does")])
+    await app.bot.set_my_commands([
+        BotCommand("menu", "Show what each command does"),
+        BotCommand("arrival", "Show bus arrival times"),
+        BotCommand("clear", "Delete recent messages"),
+
+                                   ])
 
 
 
@@ -203,6 +216,7 @@ def main():
         .build()
     )
     app.add_handler(CommandHandler("arrival", arrival))
+    app.add_handler(CommandHandler("clear", clear))
     app.add_handler(CommandHandler(["menu", "start"], menu))  # Telegram sends /start the first time you open the bot
     log.info("Bot running…")
     app.run_polling(bootstrap_retries=5)

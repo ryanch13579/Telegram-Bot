@@ -2,7 +2,7 @@
 Telegram bus bot as a Vercel serverless function (webhook).
 Runs only when Telegram sends a message or a button tap. Nothing stays running.
 
-Commands: /menu, /arrival
+Commands: /menu, /arrival, /clear
 Env vars (set in Vercel): TELEGRAM_TOKEN, LTA_API_KEY
 
 One-time setup after deploying: open https://<your-project>.vercel.app/api/webhook?setup
@@ -100,12 +100,19 @@ def build_message() -> str:
 def tg(method: str, **payload):
     httpx.post(f"{TG_API}/{method}", json=payload, timeout=8)
 
+def clear_chat(chat_id: int, last_id: int):
+    """Deletes the last 300 messages, yours and the bot's. Telegram skips ones over 48h old."""
+    for end in range(last_id, max(last_id - 300, 0), -100):  # deleteMessages takes up to 100 at a time
+        tg("deleteMessages", chat_id=chat_id, message_ids=list(range(max(end - 99, 1), end + 1)))
+
 def handle_update(update: dict):
     msg = update.get("message") or {}
     words = msg.get("text", "").split()
     command = words[0].split("@")[0] if words else ""
     if command == "/arrival":
         tg("sendMessage", chat_id=msg["chat"]["id"], text=build_message(), parse_mode="Markdown")
+    elif command == "/clear":
+        clear_chat(msg["chat"]["id"], msg["message_id"])
     elif command in ("/menu", "/start"):  # Telegram sends /start the first time you open the bot
         tg("sendMessage", chat_id=msg["chat"]["id"], text=MENU_TEXT, parse_mode="Markdown")
 
@@ -135,8 +142,10 @@ class handler(BaseHTTPRequestHandler):
                                 "allowed_updates": ["message"],
                 "drop_pending_updates": True,
             }).json()
-            tg("setMyCommands", commands=[{"command": "arrival", "description": "Show bus arrival times"},
-                                          {"command": "menu", "description": "Show what each command does"}])
+            tg("setMyCommands", commands=[
+                                          {"command": "menu", "description": "Show what each command does"},
+                                          {"command": "arrival", "description": "Show bus arrival times"},
+                                          {"command":"clear","description":"Delete recent messages"}])
             text = (f"✅ Connected! Telegram will now send messages to {url}\nNow send /arrival to your bot."
                     if r.get("ok") else f"❌ Setup failed: {r.get('description')}\nCheck TELEGRAM_TOKEN in Vercel.")
         self.send_response(200)
