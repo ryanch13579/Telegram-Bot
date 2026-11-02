@@ -151,7 +151,7 @@ def handle_update(update: dict):
     msg = update.get("message") or {}
     words = msg.get("text", "").split()
     command = words[0].split("@")[0] if words else ""
-    if command[1:] in PRIVATE_COMMANDS:
+    if command.startswith("/") and command[1:] in PRIVATE_COMMANDS:
         tg(
             "sendMessage",
             chat_id=msg["chat"]["id"],
