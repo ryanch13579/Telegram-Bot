@@ -231,6 +231,8 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except BadRequest as e:
             log.info("Couldn't delete some messages: %s", e)
+    # send the menu again so the chat isn't left empty
+    await update.message.reply_text(MENU_TEXT, parse_mode="Markdown")
 
 
 # ---------- Startup / shutdown ----------

@@ -151,7 +151,6 @@ def handle_update(update: dict):
     msg = update.get("message") or {}
     words = msg.get("text", "").split()
     command = words[0].split("@")[0] if words else ""
-    # hidden; anyone else gets no reply, like an unknown command
     if command[1:] in PRIVATE_COMMANDS:
         tg(
             "sendMessage",
@@ -169,6 +168,14 @@ def handle_update(update: dict):
         )
     elif command == "/clear":
         clear_chat(msg["chat"]["id"], msg["message_id"])
+        # send the menu again so the chat isn't left empty
+        tg(
+            "sendMessage",
+            chat_id=msg["chat"]["id"],
+            text=MENU_TEXT,
+            parse_mode="Markdown",
+        )
+
     elif command in (
         "/menu",
         "/start",

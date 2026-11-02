@@ -4,3 +4,6 @@ __pycache__/
 .claude
 shuttles.json
 api/_private.py
+.vercel
+.env*
+.vercelignore
