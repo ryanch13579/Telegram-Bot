@@ -37,6 +37,13 @@ DAY_PREFIX = ["WD"] * 5 + [
 # Retrieve bus timings from the .env file
 WATCHLIST = json.loads(os.environ.get("WATCHLIST") or "[]")
 
+# Optional extra commands from api/_private.py, if that file exists
+try:
+    from api import _private
+    PRIVATE_COMMANDS = _private.COMMANDS
+except ImportError:
+    PRIVATE_COMMANDS = ()
+
 LOAD_ICON = {"SEA": "🟢", "SDA": "🟡", "LSD": "🔴"}  # seats / standing / limited
 LEGEND = "🟢 seats  🟡 standing  🔴 limited  🕒 scheduled"
 MENU_TEXT = "🚌 *Bus Arrival Bot*\n\n/menu - Show command shortcuts\n/arrival - Next buses arriving at your stops\n/clear - Delete recent messages\n"
@@ -203,6 +210,10 @@ async def arrival(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode="Markdown")
 
 
+async def private(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(_private.reply(update.message.text), parse_mode="Markdown")
+
+
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(MENU_TEXT, parse_mode="Markdown")
 
@@ -263,6 +274,9 @@ def main():
         .build()
     )
     app.add_handler(CommandHandler("arrival", arrival))
+    # hidden, not in the menu
+    if PRIVATE_COMMANDS:
+        app.add_handler(CommandHandler(list(PRIVATE_COMMANDS), private))
     app.add_handler(CommandHandler("clear", clear))
     app.add_handler(
         CommandHandler(["menu", "start"], menu)

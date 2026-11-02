@@ -2,3 +2,5 @@ venv/
 .env
 __pycache__/
 .claude
+shuttles.json
+api/_private.py

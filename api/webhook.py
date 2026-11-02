@@ -3,7 +3,7 @@ Telegram bus bot as a Vercel serverless function (webhook).
 Runs only when Telegram sends a message or a button tap. Nothing stays running.
 
 Commands: /menu, /arrival, /clear
-Env vars (set in Vercel): TELEGRAM_TOKEN, LTA_API_KEY
+Env vars (set in Vercel): TELEGRAM_TOKEN, LTA_API_KEY, WATCHLIST
 
 One-time setup after deploying: open https://<your-project>.vercel.app/api/webhook?setup
 """
@@ -11,6 +11,7 @@ One-time setup after deploying: open https://<your-project>.vercel.app/api/webho
 import hashlib
 import json
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler
@@ -34,6 +35,15 @@ SGT = timezone(timedelta(hours=8))
 DAY_PREFIX = ["WD"] * 5 + ["SAT", "SUN"]  # Mon-Fri, Sat, Sun
 
 WATCHLIST = json.loads(os.environ.get("WATCHLIST") or "[]")
+
+# Optional extra commands from api/_private.py, if that file exists
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    import _private
+    PRIVATE_COMMANDS = _private.COMMANDS
+except ImportError:
+    PRIVATE_COMMANDS = ()
+
 
 LOAD_ICON = {"SEA": "🟢", "SDA": "🟡", "LSD": "🔴"}
 LEGEND = "🟢 seats  🟡 standing  🔴 limited  🕒 scheduled"
@@ -141,7 +151,16 @@ def handle_update(update: dict):
     msg = update.get("message") or {}
     words = msg.get("text", "").split()
     command = words[0].split("@")[0] if words else ""
-    if command == "/arrival":
+    # hidden; anyone else gets no reply, like an unknown command
+    if command[1:] in PRIVATE_COMMANDS:
+        tg(
+            "sendMessage",
+            chat_id=msg["chat"]["id"],
+            text=_private.reply(msg["text"]),
+            parse_mode="Markdown",
+        )
+
+    elif command == "/arrival":
         tg(
             "sendMessage",
             chat_id=msg["chat"]["id"],
@@ -211,13 +230,11 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(text.encode())
 
 
-# ---------- Run on your PC to fill in HOURS:  python api/webhook.py ----------
-
-# ---------- Run on your PC to get the WATCHLIST value for Vercel:  python api/webhook.py ----------
+# ---------- Run on your PC to get the WATCHLIST values for Vercel:  python api/webhook.py ----------
 
 
 def update_hours():
-    """Adds first/last bus times to WATCHLIST from .env and prints the value to paste into Vercel."""
+    """Adds first/last bus times to WATCHLIST from .env and prints the values to paste into Vercel."""
     from pathlib import Path
 
     # Look for .env in the project folder, the api folder, and wherever you ran the command from
