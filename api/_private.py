@@ -19,7 +19,6 @@ SHUTTLE = json.loads(
 )
 # Command names live in the config so they stay secret: {"name": how many upcoming shuttles it shows}
 SHOW = SHUTTLE.get("show", {})
-FROM_COMMAND = SHUTTLE.get("from_command", "")
 COMMANDS = tuple(SHOW)
 SHUTTLE_ROUTES = SHUTTLE.get("routes", [])
 SHUTTLE_OFF_DAYS = {datetime.fromisoformat(
@@ -83,8 +82,9 @@ def reply(text: str) -> str:
     """'/gg' (nearest shuttle), '/leave' or '/from <place>' (next few) -> the shuttle message."""
     words = text.split()
     command = words[0].split("@")[0][1:]  # "/gg" -> "gg"
-    if command != FROM_COMMAND:
-        return shuttle_message([r for r in SHUTTLE_ROUTES if r.get("command") == command], SHOW[command])
+    tagged = [r for r in SHUTTLE_ROUTES if r.get("command") == command]
+    if tagged:
+        return shuttle_message(tagged, SHOW[command])
     # /from: match ignoring case and spaces, so "/from blocka" finds "Block A"
     wanted = "".join(words[1:]).lower()
     routes = [
@@ -92,11 +92,10 @@ def reply(text: str) -> str:
         if wanted and wanted in r["from"].replace(" ", "").lower()
     ]
     if routes:
-        return shuttle_message(routes, SHOW[FROM_COMMAND])
+        return shuttle_message(routes, SHOW[command])
     places = list(dict.fromkeys(r["from"] for r in SHUTTLE_ROUTES))
     if not places:
         return "No shuttle timings set up yet."
-    return f"Send /from and where you're leaving, e.g. /from {places[0]}\n\nPlaces: " + ", ".join(places)
 
 
 if __name__ == "__main__":

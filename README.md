@@ -12,7 +12,6 @@ A Telegram bot that shows live bus arrival times for your chosen stops using the
 - Outside operating hours it shows "Not in operation, first bus HH:MM"
 - Always uses Singapore time (UTC+8), even on an overseas server
 - Your stops are kept in an environment variable, not in the code
-- Optional private shuttle commands, with names and timings kept out of the repo (see [Private shuttle commands](#private-shuttle-commands))
 
 ## Architecture
 
@@ -61,12 +60,12 @@ In a private chat, every message (yours and the bot's) gets the next number in o
 .
 ├── api/
 │   ├── webhook.py        # Vercel serverless version (webhook)
-│   └── _private.py       # Optional shuttle commands, used by both versions
+│   └── _private.py       # Optional, see Private config
 ├── bus_arrival_bot.py    # Long-running version (polling), for your PC or a server
 ├── pyproject.toml        # Tells Vercel where the webhook entrypoint is
 ├── requirements.txt
 ├── .env                  # Your keys and stops (don't commit this)
-├── shuttles.json         # Shuttle command names and timings (don't commit this)
+├── shuttles.json         # Private config (don't commit this)
 └── README.md
 ```
 
@@ -125,7 +124,7 @@ Then send `/arrival` to your bot in Telegram. The bot only responds while the sc
    - `TELEGRAM_TOKEN`
    - `LTA_API_KEY`
    - `WATCHLIST`: paste the line from step 1 (no quotes around it)
-   - `SHUTTLES` (optional): only if you use [private shuttle commands](#private-shuttle-commands)
+   - `SHUTTLES` (optional): see [Private config](#private-config)
 4. Deploy, then open this URL once to connect Telegram to your deployment:
 
    ```
@@ -150,47 +149,11 @@ Edit `WATCHLIST` in `.env`. The polling version picks up the change the next tim
 
 For the Vercel version, run `python api/webhook.py` again. Paste the new line into Vercel's `WATCHLIST` variable, then redeploy. Do the same if LTA changes the bus schedule.
 
-## Private shuttle commands
+## Private config
 
-`api/_private.py` adds shuttle timing commands that aren't in the public menu. The code is in the repo, but the command names and timings aren't. They're read from the `SHUTTLES` environment variable, or from `shuttles.json` in the project folder if that variable isn't set. `shuttles.json` is gitignored, so your commands stay secret even though the repo is public.
+`api/_private.py` is optional and reads its settings from the `SHUTTLES` environment variable, or from `shuttles.json` if that isn't set. `shuttles.json` is gitignored.
 
-There are two kinds of command:
-
-- **Route commands** show the next departures for every route tagged with that command.
-- **The "from" command** takes a place, e.g. `/<from-command> <place>`, and shows the next departures leaving from there. The place is matched ignoring case and spaces. Sent without a place, it lists the places you can use.
-
-The shuttle runs Monday to Friday, except on the dates in `off_days`. When there are no more shuttles today, the bot shows the first one on the next day it runs.
-
-Example `shuttles.json` (the names are placeholders, so choose your own):
-
-```json
-{
-  "show": {"my-route-cmd": 1, "my-other-cmd": 3, "my-from-cmd": 3},
-  "from_command": "my-from-cmd",
-  "routes": [
-    {"command": "my-route-cmd", "from": "Place A", "to": "Place B", "times": ["0700", "0730"]},
-    {"command": "my-other-cmd", "from": "Place B", "to": "Place A", "times": ["1710", "1740"]}
-  ],
-  "off_days": ["2026-12-25"]
-}
-```
-
-| Field          | Meaning                                                               |
-| -------------- | --------------------------------------------------------------------- |
-| `show`         | Each command name (without `/`), and how many upcoming shuttles it shows |
-| `from_command` | Which command in `show` works as the "from" command                   |
-| `routes`       | One entry per route. `times` are 24-hour `HHMM` strings               |
-| `off_days`     | Dates (`YYYY-MM-DD`) when the shuttle doesn't run                     |
-
-To use the commands on Vercel, run this on your PC:
-
-```bash
-python api/_private.py
-```
-
-Paste the line it prints into Vercel's `SHUTTLES` variable, then redeploy. Do this again every time you edit `shuttles.json`.
-
-The commands aren't added to Telegram's command menu, so only people who know the names can use them.
+To set it on Vercel, run `python api/_private.py`, paste the line it prints into `SHUTTLES`, then redeploy.
 
 ## Data source
 
