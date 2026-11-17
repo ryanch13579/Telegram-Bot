@@ -190,6 +190,9 @@ def handle_update(update: dict):
             parse_mode="Markdown",
         )
     elif command == "/clear":
+        print("clear:", msg["chat"].get("type"), msg["message_id"], msg.get(
+            "message_thread_id"), msg.get("business_connection_id"))
+
         clear_chat(msg["chat"]["id"], msg["message_id"])
         # send the menu again so the chat isn't left empty
         tg(
