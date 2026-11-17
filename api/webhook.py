@@ -132,7 +132,10 @@ def build_message() -> str:
 
 
 def tg(method: str, **payload):
-    httpx.post(f"{TG_API}/{method}", json=payload, timeout=8)
+    r = httpx.post(f"{TG_API}/{method}", json=payload, timeout=8)
+    if not r.json().get("ok"):
+        print(f"Telegram {method} failed:", r.text)
+    return r
 
 
 def clear_chat(chat_id: int, last_id: int):
