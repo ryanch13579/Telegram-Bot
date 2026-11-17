@@ -10,6 +10,7 @@ One-time setup after deploying: open https://<your-project>.vercel.app/api/webho
 
 import hashlib
 import json
+import logging
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -18,6 +19,9 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
 import httpx
+
+# its request logs include the bot token
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # ---------- Config ----------
 
@@ -139,15 +143,31 @@ def tg(method: str, **payload):
 
 
 def clear_chat(chat_id: int, last_id: int):
-    """Deletes the last 300 messages, yours and the bot's. Telegram skips ones over 48h old."""
-    for end in range(
-        last_id, max(last_id - 300, 0), -100
-    ):  # deleteMessages takes up to 100 at a time
-        tg(
-            "deleteMessages",
-            chat_id=chat_id,
-            message_ids=list(range(max(end - 99, 1), end + 1)),
-        )
+    """Deletes the last 300 messages, yours and the bot's, stopping at ones over 48h old."""
+
+    def delete(start: int, end: int) -> bool:
+        r = tg("deleteMessages", chat_id=chat_id,
+               message_ids=list(range(start, end + 1)))
+        return r.json().get("ok", False)
+
+    lowest = max(last_id - 299, 1)
+    end = last_id
+    while end >= lowest:
+        # deleteMessages takes up to 100 at a time
+        start = max(end - 99, lowest)
+        if delete(start, end):
+            end = start - 1
+            continue
+        # One old (48h+) message fails the whole batch. IDs go up with time, so the old
+        # ones are at the bottom: binary search for where the deletable ones begin.
+        bad, good = start, end + 1
+        while good - bad > 1:
+            mid = (bad + good) // 2
+            if delete(mid, end):  # already-deleted IDs are skipped, so retrying is fine
+                good = mid
+            else:
+                bad = mid
+        return  # everything below this is older, so stop
 
 
 def handle_update(update: dict):
